@@ -21,20 +21,16 @@ namespace mastermind
         private string _guessResultValue;
         private bool _isWin = false;
         private bool _isError = false;
-        private readonly string _status;
-        //private List<string> _errorMessages;
         private string _errorMessage;
         public MasterMindDomain() 
         {
             // initialize with defualt settings
             
             this._codeLength = 4;
-            this._codeItemMinValue = 1;
-            this._codeItemMaxValue = 6;
-            this._attemptLimit = 10;
+            SetMinCodeItemValue(1);
+            SetMaxCodeItemValue(6);
+            SetNumberOfAttempts(10);
             _code = new Dictionary<int, List<int>>();
-            this._numberOfAttemptLeft = this._attemptLimit;
-            this._status = "Ready to Start to Play";
         }
         public MasterMindResult GetSettings()
         {
@@ -43,31 +39,34 @@ namespace mastermind
                 , _codeItemMinValue
                 , _codeItemMaxValue
                 , _attemptLimit
-                , _status
             );
             return result;
 
         }
-        public MasterMindResult SetNumberOfAttempts(int attemptLimit)
+        public void SetNumberOfAttempts(int attemptLimit)
         {
             this._attemptLimit = attemptLimit;
-            return GetSettings();
+            this._numberOfAttemptLeft = this._attemptLimit;
         }
 
-        public MasterMindResult SetMinCodeItemValue(int codeItemMinValue)
+        public void SetMinCodeItemValue(int codeItemMinValue)
         {
             this._codeItemMinValue = codeItemMinValue;
-            return GetSettings();
         }
-        public MasterMindResult SetMaxCodeItemValue(int codeItemMaxValue)
+        public void SetMaxCodeItemValue(int codeItemMaxValue)
         {
             this._codeItemMaxValue = codeItemMaxValue;
-            return GetSettings();
         }
         public MasterMindResult StartToPlay()
         {
             GenerateCode();
-            var result = new MasterMindStartPlayResult(_codeValue, this._numberOfAttemptLeft, "Code Generated Successfully");
+            var startMessag = $@"
+            Welcome to Mastermind!
+            Enter a {this._codeLength} digit number between {this._codeItemMinValue} and {this._codeItemMaxValue}
+            Duplicate digits are allowed.
+            You have {this._attemptLimit} attempts to solve.";
+
+            var result = new MasterMindStartPlayResult(this._numberOfAttemptLeft, startMessag);
             return result;
         }
 
@@ -100,8 +99,6 @@ namespace mastermind
                     this._isError = true;
                     this._isWin = false;
                     this._errorMessage = "error - invalid guess value";
-                    //result.Message = $"{errorMessage} \nYou have {this._numberOfAttemptLeft} attempts left.";
-                    //HandleErrorException(errorMessage);
                 }
             }
             else
@@ -110,8 +107,6 @@ namespace mastermind
                 this._isWin = false;
                 this._isError = true;
                 this._errorMessage = "error - attempt limit exceeds";
-                //result.Message = $"{errorMessage} \nYou have {this._numberOfAttemptLeft} attempts left.";
-                //HandleErrorException(errorMessage);
             }
 
             return ConstructResultModel();
@@ -131,9 +126,9 @@ namespace mastermind
             {
                 // construct messages.
                 if(_isError)
-                    result.Message = $"{this._errorMessage} \nYou have {this._numberOfAttemptLeft} attempts left.";
+                    result.Message = $"{this._errorMessage} \n Valid value is a {this._codeLength} digit number between {this._codeItemMinValue} and {this._codeItemMaxValue} \nYou have {this._numberOfAttemptLeft} attempts left.";
                 else if(this._numberOfAttemptLeft == 0)
-                    result.Message = $"You have lost.";
+                    result.Message = $"You have lost. \n Answer was {this._codeValue}";
                 else
                     result.Message = $"You have {this._numberOfAttemptLeft} attempts left.";
             }
@@ -182,24 +177,25 @@ namespace mastermind
             return isValid;
         }
 
-        
-
         private string EvaluateGuess(string guessValue)
         {
             var guessChars = new char[_codeLength];
+            // separate guess value into individual characters and store in array
             using(StringReader reader = new StringReader(guessValue))
             {
                 reader.Read(guessChars);
             }
 
+            // initialize to store attempt result values (++--, --+-, ++++)
             var attemptResultValue = new StringBuilder(_codeLength);
 
             for(var i=0; i<_codeLength; i++)
             {
                 int guessNumValue;
+                // try to read out each character as integer value
                 if (int.TryParse(guessChars[i].ToString(), out guessNumValue))
                 {
-                    if(IsValidGuessValueItem(guessNumValue))
+                    if(IsValidGuessValueItem(guessNumValue)) // checks valid number range
                     {
                         List<int> codeItemPostions;
                         if(_code.TryGetValue(guessNumValue, out codeItemPostions))
@@ -228,8 +224,6 @@ namespace mastermind
                     {
                         // codeItem number value is out of the set rannge
                         attemptResultValue.Append(' ');
-                        //var errorMessage = "error - codeItem number value is out of the set rannge";
-                        //HandleErrorException(errorMessage);
                     }
                 }
                 else
@@ -237,7 +231,6 @@ namespace mastermind
                     // codeItem character is not an integer value
                     this._isError = true;
                     this._errorMessage = "error - guessValue is not an integer value";
-                    //HandleErrorException(errorMessage);
 
                 }
             }
@@ -247,11 +240,6 @@ namespace mastermind
         {
             return guessValueItem >= _codeItemMinValue && guessValueItem <= _codeItemMaxValue;
         }
-        // private void HandleErrorException(string errorMessage)
-        // {
-        //     _errorMessages = _errorMessages ?? new List<string>(); // initializes if null
-        //     _errorMessages.Add(errorMessage);
-        // }
     }
         
 }
