@@ -1,0 +1,16 @@
+.vs
+.vscode
+bin
+obj
+config
+packages
+**/appsettings.Development.json
+**/test.runsettings
+**/sqlcommand.sql
+**/appsettings.configs.json
+**/appsettings.secrets.json
+**/commands.txt
+**/node_modules
+**/build
+.DS_Store
+**/_tk.txt
